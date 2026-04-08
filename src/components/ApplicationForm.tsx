@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { evaluateApplication, ApplicationData } from "../lib/gemini";
 
 export default function ApplicationForm() {
-  const [formData, setFormData] = useState<ApplicationData>({
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     linkedin: "",
@@ -21,19 +20,19 @@ export default function ApplicationForm() {
     setStatus("submitting");
 
     try {
-      // 1. Evaluate with Gemini (Frontend AI logic)
-      const result = await evaluateApplication(formData);
-      setEvaluation(result);
-
-      // 2. Notify Backend (Automation logic)
-      await fetch("/api/evaluate-application", {
+      const response = await fetch("https://cliki.app.n8n.cloud/webhook-test/sales-qualification", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          status: result.status,
-          evaluationReason: result.reason
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      setEvaluation({
+        status: data.status || "success",
+        feedback: data.message || "Application submitted successfully 🚀",
       });
 
       setStatus("success");
@@ -71,12 +70,16 @@ export default function ApplicationForm() {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-4">Application Received</h3>
+
                 <div className="bg-white border border-slate-200 rounded-xl p-6 mb-8 text-left">
-                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Instant AI Feedback</p>
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Backend Response
+                  </p>
                   <p className="text-slate-700 leading-relaxed">
                     {evaluation?.feedback}
                   </p>
                 </div>
+
                 <button
                   onClick={() => setStatus("idle")}
                   className="text-brand font-medium hover:underline"
@@ -94,90 +97,71 @@ export default function ApplicationForm() {
                 className="space-y-6"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">Full Name</label>
-                    <input
-                      required
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="John Doe"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">Gmail / Email</label>
-                    <input
-                      required
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="john@gmail.com"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">LinkedIn Profile</label>
-                    <input
-                      required
-                      name="linkedin"
-                      value={formData.linkedin}
-                      onChange={handleChange}
-                      placeholder="linkedin.com/in/johndoe"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">Contact Information</label>
-                    <input
-                      required
-                      name="contactInfo"
-                      value={formData.contactInfo}
-                      onChange={handleChange}
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Company URL</label>
                   <input
                     required
-                    name="companyUrl"
-                    value={formData.companyUrl}
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
-                    placeholder="https://acme.com"
-                    className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all"
+                    placeholder="Full Name"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-200"
+                  />
+                  <input
+                    required
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Email"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-200"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">What do you want to accomplish?</label>
-                  <textarea
-                    required
-                    name="goals"
-                    value={formData.goals}
-                    onChange={handleChange}
-                    rows={4}
-                    placeholder="Describe your goals and how we can help..."
-                    className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none transition-all resize-none"
-                  />
-                </div>
+                <input
+                  required
+                  name="linkedin"
+                  value={formData.linkedin}
+                  onChange={handleChange}
+                  placeholder="LinkedIn Profile"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200"
+                />
+
+                <input
+                  required
+                  name="contactInfo"
+                  value={formData.contactInfo}
+                  onChange={handleChange}
+                  placeholder="Contact Info"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200"
+                />
+
+                <input
+                  required
+                  name="companyUrl"
+                  value={formData.companyUrl}
+                  onChange={handleChange}
+                  placeholder="Company URL"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200"
+                />
+
+                <textarea
+                  required
+                  name="goals"
+                  value={formData.goals}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder="Your goals..."
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200"
+                />
 
                 <button
                   type="submit"
                   disabled={status === "submitting"}
-                  className="w-full py-4 bg-brand text-white font-bold rounded-lg hover:bg-brand-light transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full py-4 bg-black text-white rounded-lg flex items-center justify-center"
                 >
                   {status === "submitting" ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Analyzing Application...
+                      Processing...
                     </>
                   ) : (
                     <>
@@ -188,9 +172,9 @@ export default function ApplicationForm() {
                 </button>
 
                 {status === "error" && (
-                  <div className="flex items-center text-red-600 text-sm mt-4">
+                  <div className="text-red-600 text-sm flex items-center mt-4">
                     <AlertCircle className="w-4 h-4 mr-2" />
-                    Something went wrong. Please try again.
+                    Something went wrong. Try again.
                   </div>
                 )}
               </motion.form>
